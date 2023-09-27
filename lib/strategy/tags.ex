@@ -82,15 +82,17 @@ defmodule ClusterEC2.Strategy.Tags do
     {:noreply, state}
   end
 
-  defp load(%State{topology: topology, connect: connect, disconnect: disconnect, list_nodes: list_nodes} = state) do
+  defp load(%State{topology: topology, connect: connect, disconnect: _disconnect, list_nodes: list_nodes} = state) do
     case get_nodes(state) do
       {:ok, new_nodelist} ->
+        added = MapSet.difference(new_nodelist, state.meta)
+
         new_nodelist =
-          case MapSet.difference(new_nodelist, state.meta) do
-            MapSet.new([]) ->
+          case MapSet.size(added) == 0 do
+            true ->
               state.meta
 
-            added ->
+            _ ->
               case Cluster.Strategy.connect_nodes(topology, connect, list_nodes, MapSet.to_list(added)) do
                 :ok ->
                   new_nodelist
