@@ -85,19 +85,19 @@ defmodule ClusterEC2.Strategy.Tags do
   defp load(%State{topology: topology, connect: connect, disconnect: disconnect, list_nodes: list_nodes} = state) do
     case get_nodes(state) do
       {:ok, new_nodelist} ->
-        removed = MapSet.difference(state.meta, new_nodelist)
+        # removed = MapSet.difference(state.meta, new_nodelist)
 
-        new_nodelist =
-          case Cluster.Strategy.disconnect_nodes(topology, disconnect, list_nodes, MapSet.to_list(removed)) do
-            :ok ->
-              new_nodelist
+        # new_nodelist =
+        #  case Cluster.Strategy.disconnect_nodes(topology, disconnect, list_nodes, MapSet.to_list(removed)) do
+        #    :ok ->
+        #      new_nodelist
 
-            {:error, bad_nodes} ->
-              # Add back the nodes which should have been removed, but which couldn't be for some reason
-              Enum.reduce(bad_nodes, new_nodelist, fn {n, _}, acc ->
-                MapSet.put(acc, n)
-              end)
-          end
+        #    {:error, bad_nodes} ->
+        #      # Add back the nodes which should have been removed, but which couldn't be for some reason
+        #      Enum.reduce(bad_nodes, new_nodelist, fn {n, _}, acc ->
+        #        MapSet.put(acc, n)
+        #      end)
+        #  end
 
         new_nodelist =
           case Cluster.Strategy.connect_nodes(topology, connect, list_nodes, MapSet.to_list(new_nodelist)) do
@@ -105,6 +105,7 @@ defmodule ClusterEC2.Strategy.Tags do
               new_nodelist
 
             {:error, bad_nodes} ->
+              IO.inspect(bad_nodes, label: "bad_nodes")
               # Remove the nodes which should have been added, but couldn't be for some reason
               Enum.reduce(bad_nodes, new_nodelist, fn {n, _}, acc ->
                 MapSet.delete(acc, n)
